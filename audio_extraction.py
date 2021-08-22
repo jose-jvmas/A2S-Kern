@@ -14,7 +14,7 @@ def get_x_from_file(audiofilename):
 		filterbank=LogarithmicFilterbank,
 		frame_size=4096,
 		fft_size=4096,
-		hop_size=441 * 4,  # 25 fps
+		hop_size=441 * 2,  # 25 fps -> 441 * 4 ; 50 fps -> 441 * 2
 		num_bands=48,
 		fmin=30,
 		fmax=8000.0,

@@ -1,2 +1,8 @@
 *.wav
 *.txt
+*.pyc
+*.skm
+*.krn
+*.h5
+*.json
+joblib_cache

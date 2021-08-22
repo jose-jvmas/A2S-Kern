@@ -1,4 +1,6 @@
+import os
 import re
+import json
 
 init_krn = [
 	'*clefG2',
@@ -36,82 +38,9 @@ init_krn = [
 ]
 
 
-clef_CTCFriendly_dict = {
-	'clefG2' : 'U',
-	'clefC5' : 'V',
-	'clefC4' : 'W',
-	'clefC3' : 'X',
-	'clefF3' : 'Y',
-	'clefF4' : 'Z',
-	'clefC1' : '$',
-	'clefG1' : '@',
-	'clefC2' : '&'
-}
-
-key_CTCFriendly_dict = {
-	'k[b-e-a-d-g-c-f-]'	:	'u',
-	'k[b-e-a-d-g-c-]'	:	't',
-	'k[b-e-a-d-g-]'	:	'h',
-	'k[b-e-a-d-]'	:	'i',
-	'k[b-e-a-]'	:	'j',
-	'k[b-e-]'	:	'k',
-	'k[b-]'	:	'l',
-	'k[]':	None,
-	'k[f#]'	:	'm',
-	'k[f#c#]'	:	'n',
-	'k[f#c#g#]'	:	'o',
-	'k[f#c#g#d#]'	:	'p',
-	'k[f#c#g#d#a#]'	:	'q',
-	'k[f#c#g#d#a#e#]'	:	'r',
-	'k[f#c#g#d#a#e#b#]'	:	's'
-}
-
-
-
-meter_CTCFriendly_dict = {
-	'*M3/4' : 't',
-	'*M8/8' : 'u',
-	'*M4/2' : 'v',
-	'*M2/1' : 'w',
-	'*M2/2' : 'x',
-	'*M4/4' : 'y',
-	'*M5/4' : 'z',
-	'*M12/16' : 'A',
-	'*M2/3' : 'B',
-	'*M9/8' : 'C',
-	'*M3/8' : 'D',
-	'*M6/8' : 'E',
-	'*M24/16' : 'F',
-	'*M6/16' : 'G',
-	'*M4/1' : 'H',
-	'*M12/8' : 'I',
-	'*M6/4' : 'J',
-	'*M6/2' : 'K',
-	'*M9/16' : 'L',
-	'*M7/4' : 'M',
-	'*M3/1' : 'N',
-	'*M4/8' : 'O',
-	'*M2/4' : 'P',
-	'*M3/6' : 'Q',
-	'*M8/2' : 'R',
-	'*M1/2' : 'S',
-	'*M3/2' : 'T',
-}
-
-
 
 """Processing notes and rests"""
 def process_kern_note(note):
-	duration_dict = {
-		'64'	:	'¿',
-		'32'	:	'^',
-		'16'	:	'=',
-		'8'		:	'*',
-		'4'		:	'!',
-		'2'		:	'¡',
-		'1'		:	'?',
-		'0'		:	'+'
-	}
 
 	duration = re.findall('[0-9]+', note)
 
@@ -139,48 +68,154 @@ def process_kern_note(note):
 			pitch += " " + "".join(alteration)
 
 		#return pitch + "".join(alteration) + octave + duration_dict[duration] + dot
-		return pitch + " " + octave + " " + duration_dict[duration] + " " + dot
+		return pitch_dict[pitch] + " " + octave_dict['O'+str(octave)] + " " + duration_dict[duration] + " " + dot
 	else:
 		return ',' + " " + duration_dict[duration] + " " + dot
 
-def krn2CTCFriendly():
-	ctc_friendly = list()
-
-	print(init_krn)
-
-	#CLEF:
-	clef = "".join([s for s in init_krn if "clef" in s]).replace('*','')
-	ctc_friendly.append(clef_CTCFriendly_dict[clef])
-
-	#KEY:
-	key = "".join([s for s in init_krn if "k[" in s]).replace('*','')
-	if key != '': ctc_friendly.append(key_CTCFriendly_dict[key])
-
-	#METER:
-	meter = "".join([s for s in init_krn if "*M" in s])
-	if meter != '': ctc_friendly.append(meter_CTCFriendly_dict[meter])
-
-	music_elements = [music_element for music_element in init_krn if not music_element.startswith('*') and not music_element.startswith('!')]
-
-
-	for element in music_elements:
-		try:
-			if '=' in element: #Barline
-				ctc_friendly.append('|')
-			elif 's' in element: #Slur
-				ctc_friendly.append('_')
-			else: #Notes
-				if not 'q' in element: ctc_friendly.append(process_kern_note(element))
-		except:
-			pass
-
-	return
 
 
 
+
+
+
+"""Processing notes and rests"""
+def process_kern_note_to_dict(note):
+
+	duration = re.findall('[0-9]+', note)
+	duration = duration[0] if len(duration) == 1 else '4'
+	dot = '.' if '.' in note else ''
+
+	if 'r' not in note :
+		#Obtaining pitch:
+		pitch_raw = re.findall('[a-gA-G]+', note)[0]
+		pitch = "".join(set(pitch_raw.lower()))
+
+		#Obtaining octave:
+		octave = ''
+		if pitch_raw.isupper():
+			octave = str(4 - len(pitch_raw))
+		else:
+			octave = str(len(pitch_raw) + 3)
+
+		#Obtaining alteration:
+		alteration = "".join(re.findall('[n#-]+', note))
+
+		# return 'P'+pitch, 'PA' + str(alteration), 'O'+str(octave), 'D'+str(duration), 'DA'+dot
+		return 'P'+pitch, 'PA' + str(alteration), str(octave), str(duration), 'DA'+dot
+	else:
+		# return 'Pr', 'PA', 'O', 'D'+str(duration), 'DA'+dot
+		return 'Pr', 'PA', 'O', str(duration), 'DA'+dot
+
+
+def obtain_symbol_dictionaries(path, files):
+
+	clefs = list()
+	keys = list()
+	meters = list()
+	pitches = list()
+	pitch_alterations = list()
+	octaves = list()
+	durations = list()
+	duration_alterations = list()
+
+	#Iterate through files:
+	for single_file in files:
+		with open(os.path.join(path, single_file)) as f:
+			init_krn = f.read().splitlines()
+
+		#CLEFs:
+		clefs.extend([s for s in init_krn if "clef" in s])
+
+		#KEYs:
+		keys.extend([s for s in init_krn if "k[" in s])
+
+		#METERs:
+		meters.extend([s for s in init_krn if "*M" in s])
+
+		#Music elements
+		music_elements = [music_element for music_element in init_krn if not music_element.startswith('*') and not music_element.startswith('!')]
+
+		for element in music_elements:
+			if not 'q' in element and '=' not in element and 's' not in element:
+				sal = process_kern_note_to_dict(element)
+				pitches.append(sal[0])
+				pitch_alterations.append(sal[1])
+				octaves.append(sal[2])
+				durations.append(sal[3])
+				duration_alterations.append(sal[4])
+
+	#Last additional symbols:
+	symbol_list = list()
+	symbol_list.append('=')
+	symbol_list.append('s')
+
+	#Creating symbol list:
+	symbol_list.extend(list(set(clefs)))
+	symbol_list.extend(list(set(keys)))
+	symbol_list.extend(list(set(meters)))
+	symbol_list.extend(list(set(pitches)))
+	symbol_list.extend(list(set(pitch_alterations)))
+	symbol_list.extend(list(set(octaves)))
+	symbol_list.extend(list(set(durations)))
+	symbol_list.extend(list(set(duration_alterations)))
+
+	#Removing non-relevant symbols:
+	try:
+		symbol_list.remove('DA')
+	except:
+		pass
+	try:
+		symbol_list.remove('O')
+	except:
+		pass
+	try:
+		symbol_list.remove('PA')
+	except:
+		pass
+	
+	#Obtaining the unique symbols (as a set):
+	symbol_list = sorted(list(set(symbol_list)))
+
+	return symbol_list
+
+
+
+def krnInitProcessing(init_krn):
+	out_seq = list()
+
+	for single_element in init_krn:
+		if "clef" in single_element: #CLEF?
+			out_seq.append(single_element)
+
+		elif "k[" in single_element: #KEY?
+			out_seq.append(single_element)
+		
+		elif "*M" in single_element: #METER?
+			out_seq.append(single_element)
+
+		elif single_element.startswith('='): #MUSIC ELEMENT?
+			out_seq.append('=')
+		
+		elif single_element.startswith('s'):
+			out_seq.append('s')
+
+		elif not single_element.startswith('*') and not single_element.startswith('!'):
+			if not 'q' in single_element:
+				out_seq.extend(process_kern_note_to_dict(single_element))
+
+	out_seq = list(filter(('PA').__ne__, out_seq))
+	out_seq = list(filter(('O').__ne__, out_seq))
+	out_seq = list(filter(('DA').__ne__, out_seq))
+
+	return out_seq
 
 
 
 
 if __name__ == '__main__':
-	krn2CTCFriendly()
+	# path = 'Primus/Data/GT'
+	# files = [u for u in os.listdir(path) if u.endswith('.krn')]
+	# symbol_list = obtain_symbol_dictionaries(path, files)
+
+	out_seq = krnInitProcessing(init_krn)
+

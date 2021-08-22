@@ -3,8 +3,10 @@ import cv2
 import json
 import random
 import numpy as np
-import CTC_model as CTC_model
+import kern2Code
 import audio_extraction
+import CTC_model as CTC_model
+
 
 """Function for listing the data partitions inside the selected fold"""
 def list_files(yml_parameters):
@@ -35,10 +37,13 @@ def create_symbol_data(yml_parameters):
 	files = os.listdir(yml_parameters['path_to_GT'])
 	files = [f for f in files if f.endswith(yml_parameters['GT_extension'])]
 
-	for single_file in files:
-		with open(os.path.join(yml_parameters['path_to_GT'],single_file)) as f:
-			current_sequence = f.readlines()[0].split()
-			complete_symbol_list.extend(current_sequence)
+	if yml_parameters['GT_type'] == 'semantic':
+		for single_file in files:
+			with open(os.path.join(yml_parameters['path_to_GT'],single_file)) as f:
+				current_sequence = f.readlines()[0].split()
+				complete_symbol_list.extend(current_sequence)
+	elif yml_parameters['GT_type'] == 'krn':
+		complete_symbol_list = kern2Code.obtain_symbol_dictionaries(yml_parameters['path_to_GT'], files)
 
 	#Obtaining the unique symbols (as a set):
 	symbol_list = sorted(list(set(complete_symbol_list)))
@@ -92,10 +97,14 @@ def load_selected_range(init_index, end_index, files, symbol_dict, yml_parameter
 
 		#Labels:
 		##-Label itself:
-		f = open(os.path.join(yml_parameters['path_to_GT'], files[itFile].split(yml_parameters['src_extension'])[0] + yml_parameters['GT_extension']))
-		temp_symbols_list = f.readlines()[0].split()
-		f.close()
+		with open(os.path.join(yml_parameters['path_to_GT'], files[itFile].split(yml_parameters['src_extension'])[0] + yml_parameters['GT_extension'])) as f:
+			if yml_parameters['GT_type'] == 'semantic':
+				temp_symbols_list = f.readlines()[0].split()
+				
+			elif yml_parameters['GT_type'] == 'krn':
+				temp_symbols_list = kern2Code.krnInitProcessing(f.read().splitlines())
 
+		
 		temp_symbol_array = np.array([symbol_dict[u] for u in temp_symbols_list])
 		Y_len.append(len(temp_symbol_array))
 		Y.append(temp_symbol_array)
@@ -171,22 +180,29 @@ def load_image_for_manual_test(image_name, symbol_dict, yml_parameters):
 	X_test = list()
 	Y_test = list()
 
-	#Images:
-	file_img = cv2.imread(os.path.join(yml_parameters['path_to_images'], image_name))
-	init_img = (255. - cv2.cvtColor(file_img, cv2.COLOR_BGR2GRAY))/255
-	temp_img, init_width = adapt_images_aspect_ratio(img = init_img, new_height = yml_parameters['user_max_height'],\
-		new_width =  yml_parameters['user_max_width'])
+	#Audios:
+	file_in = np.array(audio_extraction.get_x_from_file(os.path.join(yml_parameters['path_to_audios'], image_name)))
 
-	X_test.append(np.expand_dims(temp_img, temp_img.ndim))
+	#Adapt and normalize:
+	file_in = np.flip(np.transpose(file_in),0)
+	file_in = (file_in - np.amin(file_in)) / (np.amax(file_in) - np.amin(file_in))
+	init_width = file_in.shape[1]
+
+	X_test.append(np.expand_dims(file_in, file_in.ndim))
 	X_len = [init_width]
 
 	#Labels:
 	##-Label itself:
-	f = open(os.path.join(yml_parameters['path_to_GT'], image_name.split(yml_parameters['src_extension'])[0] + yml_parameters['GT_extension']))
-	temp_symbols_list = f.readlines()[0].split()
-	f.close()
+	with open(os.path.join(yml_parameters['path_to_GT'], image_name.split(yml_parameters['src_extension'])[0] + yml_parameters['GT_extension'])) as f:
+		if yml_parameters['GT_type'] == 'semantic':
+			temp_symbols_list = f.readlines()[0].split()
+			
+		elif yml_parameters['GT_type'] == 'krn':
+			temp_symbols_list = kern2Code.krnInitProcessing(f.read().splitlines())
+
 	Y_test = temp_symbols_list
 	Y_len = [len(temp_symbols_list)]
+
 
 	#Casting lists to Numpy arrays:
 	X_test = np.array(X_test,dtype='float64')
