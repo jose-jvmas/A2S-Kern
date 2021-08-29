@@ -100,11 +100,11 @@ def process_kern_note_to_dict(note):
 		#Obtaining alteration:
 		alteration = "".join(re.findall('[n#-]+', note))
 
-		# return 'P'+pitch, 'PA' + str(alteration), 'O'+str(octave), 'D'+str(duration), 'DA'+dot
-		return 'P'+pitch, 'PA' + str(alteration), str(octave), str(duration), 'DA'+dot
+		return 'P'+pitch, 'PA' + str(alteration), 'O'+str(octave), 'D'+str(duration), 'DA'+dot
+		# return 'P'+pitch, 'PA' + str(alteration), str(octave), str(duration), 'DA'+dot
 	else:
-		# return 'Pr', 'PA', 'O', 'D'+str(duration), 'DA'+dot
-		return 'Pr', 'PA', 'O', str(duration), 'DA'+dot
+		return 'Pr', 'PA', 'O', 'D'+str(duration), 'DA'+dot
+		# return 'Pr', 'PA', 'O', str(duration), 'DA'+dot
 
 
 def obtain_symbol_dictionaries(path, files):
