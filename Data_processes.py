@@ -1,5 +1,5 @@
 import os
-import cv2
+# import cv2
 import json
 import random
 import numpy as np
@@ -43,7 +43,7 @@ def create_symbol_data(yml_parameters):
 				current_sequence = f.readlines()[0].split()
 				complete_symbol_list.extend(current_sequence)
 	elif yml_parameters['GT_type'] == 'krn':
-		complete_symbol_list = kern2Code.obtain_symbol_dictionaries(yml_parameters['path_to_GT'], files)
+		complete_symbol_list = kern2Code.obtain_symbol_dictionaries(yml_parameters, files)
 
 	#Obtaining the unique symbols (as a set):
 	symbol_list = sorted(list(set(complete_symbol_list)))
@@ -102,7 +102,7 @@ def load_selected_range(init_index, end_index, files, symbol_dict, yml_parameter
 				temp_symbols_list = f.readlines()[0].split()
 				
 			elif yml_parameters['GT_type'] == 'krn':
-				temp_symbols_list = kern2Code.krnInitProcessing(f.read().splitlines())
+				temp_symbols_list = kern2Code.krnInitProcessing(f.read().splitlines(), yml_parameters)
 
 		
 		temp_symbol_array = np.array([symbol_dict[u] for u in temp_symbols_list])
@@ -198,7 +198,7 @@ def load_image_for_manual_test(image_name, symbol_dict, yml_parameters):
 			temp_symbols_list = f.readlines()[0].split()
 			
 		elif yml_parameters['GT_type'] == 'krn':
-			temp_symbols_list = kern2Code.krnInitProcessing(f.read().splitlines())
+			temp_symbols_list = kern2Code.krnInitProcessing(f.read().splitlines(), yml_parameters)
 
 	Y_test = temp_symbols_list
 	Y_len = [len(temp_symbols_list)]

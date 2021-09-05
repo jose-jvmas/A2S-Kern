@@ -39,38 +39,38 @@ init_krn = [
 
 
 
-"""Processing notes and rests"""
-def process_kern_note(note):
+# """Processing notes and rests"""
+# def process_kern_note(note):
 
-	duration = re.findall('[0-9]+', note)
+# 	duration = re.findall('[0-9]+', note)
 
-	duration = duration[0] if len(duration) == 1 else '4'
+# 	duration = duration[0] if len(duration) == 1 else '4'
 
 
-	dot = '.' if '.' in note else ''
+# 	dot = '.' if '.' in note else ''
 
-	if 'r' not in note :
-		#Obtaining pitch:
-		pitch_raw = re.findall('[a-gA-G]+', note)[0]
-		pitch = "".join(set(pitch_raw.lower()))
+# 	if 'r' not in note :
+# 		#Obtaining pitch:
+# 		pitch_raw = re.findall('[a-gA-G]+', note)[0]
+# 		pitch = "".join(set(pitch_raw.lower()))
 
-		#Obtaining octave:
-		octave = ''
-		if pitch_raw.isupper():
-			octave = str(4 - len(pitch_raw))
-		else:
-			octave = str(len(pitch_raw) + 3)
+# 		#Obtaining octave:
+# 		octave = ''
+# 		if pitch_raw.isupper():
+# 			octave = str(4 - len(pitch_raw))
+# 		else:
+# 			octave = str(len(pitch_raw) + 3)
 
-		#Obtaining alteration:
-		alteration = re.findall('[n#-]+', note)
+# 		#Obtaining alteration:
+# 		alteration = re.findall('[n#-]+', note)
 		
-		if len(alteration) > 0:
-			pitch += " " + "".join(alteration)
+# 		if len(alteration) > 0:
+# 			pitch += " " + "".join(alteration)
 
-		#return pitch + "".join(alteration) + octave + duration_dict[duration] + dot
-		return pitch_dict[pitch] + " " + octave_dict['O'+str(octave)] + " " + duration_dict[duration] + " " + dot
-	else:
-		return ',' + " " + duration_dict[duration] + " " + dot
+# 		#return pitch + "".join(alteration) + octave + duration_dict[duration] + dot
+# 		return pitch_dict[pitch] + " " + octave_dict['O'+str(octave)] + " " + duration_dict[duration] + " " + dot
+# 	else:
+# 		return ',' + " " + duration_dict[duration] + " " + dot
 
 
 
@@ -107,7 +107,7 @@ def process_kern_note_to_dict(note):
 		# return 'Pr', 'PA', 'O', str(duration), 'DA'+dot
 
 
-def obtain_symbol_dictionaries(path, files):
+def obtain_symbol_dictionaries(yml_parameters, files):
 
 	clefs = list()
 	keys = list()
@@ -120,7 +120,7 @@ def obtain_symbol_dictionaries(path, files):
 
 	#Iterate through files:
 	for single_file in files:
-		with open(os.path.join(path, single_file)) as f:
+		with open(os.path.join(yml_parameters['path_to_GT'], single_file)) as f:
 			init_krn = f.read().splitlines()
 
 		#CLEFs:
@@ -146,13 +146,21 @@ def obtain_symbol_dictionaries(path, files):
 
 	#Last additional symbols:
 	symbol_list = list()
-	symbol_list.append('=')
 	symbol_list.append('s')
 
 	#Creating symbol list:
-	symbol_list.extend(list(set(clefs)))
-	symbol_list.extend(list(set(keys)))
-	symbol_list.extend(list(set(meters)))
+	if yml_parameters['elements_in_GT']['clefs']:
+		symbol_list.extend(list(set(clefs)))
+	
+	if yml_parameters['elements_in_GT']['keys']:	
+		symbol_list.extend(list(set(keys)))
+
+	if yml_parameters['elements_in_GT']['meters']:	
+		symbol_list.extend(list(set(meters)))
+
+	if yml_parameters['elements_in_GT']['barlines']:	
+		symbol_list.append('=')
+
 	symbol_list.extend(list(set(pitches)))
 	symbol_list.extend(list(set(pitch_alterations)))
 	symbol_list.extend(list(set(octaves)))
@@ -180,21 +188,25 @@ def obtain_symbol_dictionaries(path, files):
 
 
 
-def krnInitProcessing(init_krn):
+def krnInitProcessing(init_krn, yml_parameters):
 	out_seq = list()
 
 	for single_element in init_krn:
-		if "clef" in single_element: #CLEF?
-			out_seq.append(single_element)
+		if "clef" in single_element:
+			if yml_parameters['elements_in_GT']['clefs']: #CLEF?
+				out_seq.append(single_element)
 
-		elif "k[" in single_element: #KEY?
-			out_seq.append(single_element)
+		elif "k[" in single_element:
+			if yml_parameters['elements_in_GT']['keys']: #KEY?
+				out_seq.append(single_element)
 		
-		elif "*M" in single_element: #METER?
-			out_seq.append(single_element)
+		elif "*M" in single_element:
+			if yml_parameters['elements_in_GT']['meters']: #METER?
+				out_seq.append(single_element)
 
-		elif single_element.startswith('='): #MUSIC ELEMENT?
-			out_seq.append('=')
+		elif single_element.startswith('='):
+			if yml_parameters['elements_in_GT']['barlines']: #MUSIC ELEMENT?
+				out_seq.append('=')
 		
 		elif single_element.startswith('s'):
 			out_seq.append('s')
@@ -217,5 +229,19 @@ if __name__ == '__main__':
 	# files = [u for u in os.listdir(path) if u.endswith('.krn')]
 	# symbol_list = obtain_symbol_dictionaries(path, files)
 
-	out_seq = krnInitProcessing(init_krn)
+	# elements_in_GT:
+#   clefs: False
+#   keys: False
+#   meters: False
+#   barlines: False
+	elements_in_GT = {
+		'clefs' : True,
+		'keys' : True,
+		'meters' : True,
+		'barlines' : True
+	}
+
+	yml_parameters = {'elements_in_GT' : elements_in_GT}
+
+	out_seq = krnInitProcessing(init_krn, yml_parameters)
 

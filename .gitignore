@@ -5,4 +5,5 @@
 *.krn
 *.h5
 *.json
+*.krn
 joblib_cache

@@ -9,6 +9,11 @@ batch_size : 1
 epochs : 1
 super_epochs : 2000
 create_dictionaries : True
+elements_in_GT:
+  clefs: False
+  keys: False
+  meters: False
+  barlines: False
 
 LM:
   create : True
