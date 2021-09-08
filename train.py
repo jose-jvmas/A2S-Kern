@@ -36,13 +36,15 @@ def train_model(yml_parameters, model, prediction_model, symbol_dict, inverse_sy
 			)
 
 		# /VALIDATION\ #
-		current_iteration_results.error_dict['Validation']['SeqER'], current_iteration_results.error_dict['Validation']['SymER'] = evaluate_set(files = val_files,\
+		current_iteration_results.error_dict['Validation']['SeqER'], current_iteration_results.error_dict['Validation']['SymER'],\
+			current_iteration_results.error_dict['Validation']['SeqER_kern'], current_iteration_results.error_dict['Validation']['SymER_kern'] = evaluate_set(files = val_files,\
 			yml_parameters = yml_parameters, prediction_model = prediction_model, symbol_dict = symbol_dict,\
 			inverse_symbol_dict = inverse_symbol_dict, partition = 'val')
 		# \VALIDATION/ #
 	
 		# /TEST\ #
-		current_iteration_results.error_dict['Test']['SeqER'], current_iteration_results.error_dict['Test']['SymER'] = evaluate_set(files = test_files,\
+		current_iteration_results.error_dict['Test']['SeqER'], current_iteration_results.error_dict['Test']['SymER'],\
+			current_iteration_results.error_dict['Test']['SeqER_kern'], current_iteration_results.error_dict['Test']['SymER_kern'] = evaluate_set(files = test_files,\
 			yml_parameters = yml_parameters, prediction_model = prediction_model, symbol_dict = symbol_dict,\
 			inverse_symbol_dict = inverse_symbol_dict, partition = 'test')
 		# \TEST/ #
@@ -108,6 +110,6 @@ def evaluate_set(files, prediction_model, yml_parameters, symbol_dict, inverse_s
 		init_index = end_index
 
 	#Figures of merit:
-	SeqER_error, SymER_error = CTC_model.error_functions(result_CTC_Decoding_global, Y_global, Y_length_global, inverse_symbol_dict)
+	SeqER_error, SymER_error, SeqER_kern_error, SymER_kern_error = CTC_model.error_functions(result_CTC_Decoding_global, Y_global, Y_length_global, inverse_symbol_dict)
 
-	return SeqER_error, SymER_error
+	return SeqER_error, SymER_error, SeqER_kern_error, SymER_kern_error

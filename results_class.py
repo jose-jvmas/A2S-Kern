@@ -6,18 +6,28 @@ class ResultsClass:
 		self.error_dict = {
 			'Validation' : {
 				'SymER' : float('inf'),
-				'SeqER' : float('inf')
+				'SeqER' : float('inf'),
+				'SymER_kern' : float('inf'),
+				'SeqER_kern' : float('inf')
 			},
 			'Test': {
 				'SymER' : float('inf'),
-				'SeqER' : float('inf')
+				'SeqER' : float('inf'),
+				'SymER_kern' : float('inf'),
+				'SeqER_kern' : float('inf')
 			},
 		}
 		return
 
 	def __str__(self):
-		out = "VALIDATION\t\t=> SymER: {:.2f} % - SeqER: {:.2f} % ".format(self.error_dict['Validation']['SymER'], self.error_dict['Validation']['SeqER'])
+		out = "Neural Network format\n"
+		out += "VALIDATION\t\t=> SymER: {:.2f} % - SeqER: {:.2f} % ".format(self.error_dict['Validation']['SymER'], self.error_dict['Validation']['SeqER'])
 		out += "\nTEST\t\t\t=> SymER: {:.2f} % - SeqER: {:.2f} %".format(self.error_dict['Test']['SymER'], self.error_dict['Test']['SeqER'])
+
+		out += "\n\nKern format\n"
+		out += "VALIDATION\t\t=> SymER: {:.2f} % - SeqER: {:.2f} % ".format(self.error_dict['Validation']['SymER_kern'], self.error_dict['Validation']['SeqER_kern'])
+		out += "\nTEST\t\t\t=> SymER: {:.2f} % - SeqER: {:.2f} %".format(self.error_dict['Test']['SymER_kern'], self.error_dict['Test']['SeqER_kern'])
+
 		return out
 
 

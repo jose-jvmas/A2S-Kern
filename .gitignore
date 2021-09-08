@@ -6,4 +6,5 @@
 *.h5
 *.json
 *.krn
+.venv/
 joblib_cache

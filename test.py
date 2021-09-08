@@ -2,6 +2,7 @@ import os
 import numpy as np
 import CTC_model as CTC_model
 import Data_processes as Data_processes
+import Code2Kern
 
 
 
@@ -38,6 +39,16 @@ def test_model(model_path, image_path, yml_parameters):
 	#Printing results:
 	print("Pred:\t" + ",".join(CTC_prediction))
 	print("GT:\t" + ",".join(GT_label))
+
+	print("- Symbol error: " + str(SymER) + "\n- Sequence error: " + str(SeqER))
+
+	print("Pred:\t{}".format(",".join(Code2Kern.decode_prediction(CTC_prediction))))
+	print("GT:\t{}".format(",".join(Code2Kern.decode_prediction(GT_label))))
+
+	#Obtaining metrics:
+	SeqER, SymER = CTC_model.error_functions_manual_checking(CTC_prediction = Code2Kern.decode_prediction(CTC_prediction),\
+		true_labels = Code2Kern.decode_prediction(GT_label))
+
 	print("- Symbol error: " + str(SymER) + "\n- Sequence error: " + str(SeqER))
 
 	return

@@ -1,20 +1,12 @@
 
-
-# Pred:   *clefG2,*k[b-e-a-],*M3/8,Pb,5,4,Pe,PA-,5,8,PA-,8,Pc,6,8,Pb,5,8,Pa,5,8,Pa,5,8,16,5,16,Pg,5,16
-# GT:     *clefG2,*k[b-e-a-],*M3/4,Pb,PA-,5,4,Pe,PA-,5,8,Pb,PA-,5,8,Pc,6,8,Pb,PA-,5,8,=,Pa,PA-,5,8,Pa,PA-,5,8,Pr,16,Pa,PA-,5,16,Pg,5,16,Pa,PA-,5,16,Pb,PA-,5,16,Pa,PA-,5,16,Pg,5,16,Pa,PA-,5,16,=
-
-
-
-
-
-
+"""Convert CRNN prediction into Kern"""
 def decode_prediction(input_seq):
 	out_seq = list()
 
 	it = 0
 
 	while it < len(input_seq):
-		print(input_seq[it])
+		# print(input_seq[it])
 
 
 		if "clef" in input_seq[it]: #CLEFs:
@@ -37,61 +29,68 @@ def decode_prediction(input_seq):
 			out_seq.append(input_seq[it])
 			it += 1
 
-		else: #NOTEs:
+		elif 'P' in input_seq[it]: #NOTEs:
 			if len(input_seq[it]) == 2 and input_seq[it][0] == 'P' and input_seq[it][1] != 'A':
 				# Note case:
 				out_note = list()
 				
 				# Pitch:
-				out_note.append(input_seq[it][1])
+				pitch = input_seq[it][1]
 				it += 1
 
 				# Alteration?
-				if 'PA' in input_seq[it]:
-					alteration = input_seq[it][2]
-					out_note.append(alteration)
+				pitch_alteration = ''
+				if it < len(input_seq) and 'PA' in input_seq[it]:
+					pitch_alteration = input_seq[it][2]
+					out_note.append(pitch_alteration)
 					it += 1
 				
 				# Octave?
-				if 'O' in input_seq[it]:
-					octave = input_seq[it][1]
+				octave = ''
+				if it < len(input_seq) and 'O' in input_seq[it]:
+					octave = input_seq[it][1:]
 					out_note.append(octave)
 					it += 1
 
 				# Duration?
-				if 'D' in input_seq[it]:
-					duration = input_seq[it][1]
+				duration = ''
+				if it < len(input_seq) and 'D' in input_seq[it]:
+					duration = input_seq[it][1:]
 					out_note.append(duration)
 					it += 1
 
 				# Duration alteration?
-				if 'DA' in input_seq[it]:
+				duration_alteration = ''
+				if it < len(input_seq) and 'DA' in input_seq[it]:
 					duration_alteration = input_seq[it][2]
 					out_note.append(duration_alteration)
 					it += 1
 			
-			if out_note[0] != 'r':
-				note = pitchOctave2Kern(out_note[0], octave)
-				note = duration + note
+			#Creating the actual note with the elements extracted:
+			if pitch != 'r':
+				if duration != '' and octave != '': #Non-silence
+					note = pitchOctave2Kern(pitch, 'O'+octave)
+					duration = duration + duration_alteration if len(duration_alteration) > 0 else duration
+					note = duration + note
 
-				print(f'{out_note} <-> {note}')
+					note = note + pitch_alteration if len(pitch_alteration) > 0 else note
 
+					# print(f'{out_note} <-> {note}')
 
+					out_seq.append(note)
 
-			out_seq.append(out_note)
+			else: #Silence
+				if duration != '':
+					silence = duration + pitch
+					out_seq.append(silence)
+		else:
+			it += 1
 			
-	return
+	return out_seq
 
 
-
+"""Octave codification to Kern format"""
 def pitchOctave2Kern(in_pitch, in_octave):
-	# #Obtaining octave:
-	# octave = ''
-	# if pitch_raw.isupper():
-	# 	octave = str(4 - len(pitch_raw))
-	# else:
-	# 	octave = str(len(pitch_raw) + 3)
-
 	# Extracting octave:
 	octave = int("".join(in_octave.split("O")[1:]))
 
@@ -105,16 +104,29 @@ def pitchOctave2Kern(in_pitch, in_octave):
 
 
 
-
-
-
-# return 'P'+pitch, 'PA' + str(alteration), 'O'+str(octave), 'D'+str(duration), 'DA'+dot
-
 if __name__ == '__main__':
 	print("hello")
 	GT = ['*clefG2','*k[b-e-a-]','*M3/4','Pb','PA-','O5','D4','Pe','PA-','O5','D8','Pb','PA-','O5','D8','Pc','O6','D8','Pb','PA-','O5','D8','=','Pa','PA-','O5','D8','Pa','PA-','O5','D8','Pr','D16','Pa','PA-','O5','D16','Pg','O5','D16','Pa','PA-','O5','D16','Pb','PA-','O5','D16','Pa','PA-','O5','D16','Pg','O5','D16','Pa','PA-','O5','D16','=']
+	GT = ['*clefG2','*k[b-e-a-]','*M3/4','Pb','PA-','O5','D4','Pe','PA-','O5','D8','Pb','PA-','O5','D8','Pc','O6','D8','Pb','PA-','O5','D8','=','Pa','PA-','O5','D8','Pa','PA-','O5','D8','Pr','D16','Pa','PA-','O5','D16','Pg','O5','D16','Pa','PA-','O5','D16','Pb','PA-','O5','D16','Pa','PA-','O5','D16','Pg','O5','D16','Pa','PA-','O5','D16','=']
+	Pred = ['*clefC1','*k[b-e-a-]','Pr','D4','Pr','D4','Pr','D4','Pg','D8','Pg','D8','Pg','D16','D8','Pg','Pr','=']
 	
-	decode_prediction(GT)
-	# pitchOctave2Kern('g','O7')
+	GT = ['*clefG2','*k[b-e-a-]','*M3/4','Pb','PA-','O5','D4','Pe','PA-','O5','D8','Pb','PA-','O5','D8','Pc','O6','D8','Pb','PA-','O5','D8','=','Pa','PA-','O5','D8','Pa','PA-','O5','D8','Pr','D16','Pa','PA-','O5','D16','Pg','O5','D16','Pa','PA-','O5','D16','Pb','PA-','O5','D16','Pa','PA-','O5','D16','Pg','O5','D16','Pa','PA-','O5','D16','=']
+	Pred = ['*clefG2','*k[f#c#g#d#]','*M3/8','Pb','O5','D4','Pe','PA-','O5','D8','Pb','O5','D8','Pc','O6','Pb','O5','Pa','O5','D8','Pa','O5','Pa','D16','Pg','O5','D16']
 
+	Pred = ['*clefC1','Pr','D4','=','Pr','D4','Pr','D8','Pg','O4','D8','D16','Pg','O4','D16','Pg','O4','D16','Pg','O4','D8','Pa','O4','D8','=','Pb','O4','D8','Pb','O4','D8','Pb','PA-','O4','D8','Pb','PA-','O4','D8','Pb','O4','D8','Pa','O4','D8','Pb','O4','D8','=','Pg','O4','Pg','O4','D4','=']
+	GT = ['*clefC1','*k[b-e-a-]','Pr','D4','=','Pr','D4','=','Pr','D4','=','Pr','D4','=','Pr','D2','Pg','O4','D8','Pg','O4','D16','Pg','O4','D16','Pg','O4','D8','Pa','PAn','O4','D8','=','Pb','PAn','O4','D8','Pb','O4','D8','Pr','D8','Pb','O4','D8','Pb','O4','D8','Pb','O4','D8','Pa','PAn','O4','D8','Pb','O4','D8','=','Pg','O4','D4','=']
+
+	Pred = ['clefC1','*k[f#c#]','Pr','D4','Pr','D4','=','Pr','D4','=','Pr','D4','=','Pr','D4','=','Pr','D4','=','Pr','D4','=','Pr','D4','=','Pr','D4','=','Pr','D2','Pr','D4','Pd','O4','D4','=','Pd','O4','D2','DA.','Pd','O4','D4','Pa','O4','D4','Pa','O4','D4','Pr','D4','Pa','O4','D8','Pa','O4','D8','=','Pf','PA#','O5','D2','Pd','O5','D4','Pd','O5','D4','=']
+	GT = ['*clefC1','*k[b-]','Pr','D4','Pr','D2','Pr','D4','Pd','O4','D4','=','Pd','O4','D2','DA.','Pd','O4','D4','=','Pa','O4','D4','Pa','O4','D4','Pr','D4','Pa','O4','D8','Pa','O4','D8','=','Pf','O5','D2','Pd','O5','D4','Pd','O5','D4','=']
+
+	Pred = ['*clefC1','Pr','D4','Pr','D4','=','Pr','D4','=','Pr','D4','=','Pr','D4','=','Pr','D8','Pg','O4','D8','=','Pc','O5','D4','Pr','D4','Pr','D8','Pr','D8','Pc','O5','D8','Pe','O5','D4','Pc','O5','D8','=','Pa','O4','D4','Pa','O4','D8','=']
+	GT = ['*clefC1','*M6/8','Pr','D4','=','Pr','D4','=','Pr','D4','=','Pr','D4','=','Pr','D4','=','Pr','D4','=','Pr','D4','=','Pr','D4','=','Pr','D4','=','Pr','D4','=','Pr','D4','=','Pr','D4','=','Pr','D4','=','Pr','D4','=','Pr','D4','Pr','D8','Pr','D4','Pg','O4','D8','=','Pc','O5','D4','Pr','D8','Pr','D4','Pr','D8','=','Pr','D4','Pc','O5','D8','Pe','O5','D4','Pc','O5','D8','=','Pa','O4','D4','Pa','O4','D8','Pr','D4','Pr','D8','=']
+
+	GT = ['*clefC1','*k[b-e-a-]','*M3/4','Pr','D2','=','Pb','PA-','O4','D4','Pe','PA-','O4','D8','Pe','PA-','O5','D8','Pe','PA-','O5','D8','Pc','O5','D8','=','Pa','PA-','O4','D8','Pa','PA-','O4','D8','Pr','D4','Pr','D4','=','Pf','O5','D4','Pe','PA-','O5','D8','DA.','Pc','O5','D16','Pb','PA-','O4','D8','DA.','Pa','PA-','O4','D16','=','Pa','PA-','O4','D8','Pg','O4','D8','Pr','D4','=']
+	decode_prediction(GT)
+	# print(pitchOctave2Kern('g','O5'))
+	
+	# Pitch - p. alteration - Octave - Duration
+	# print(pitchOctave2Kern('b','O5'))
+	# ['b', '-', '5', '4']
 	

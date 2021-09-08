@@ -20,7 +20,7 @@ import numpy as np
 import editdistance
 import sys
 from itertools import groupby
-
+import Code2Kern
 # from Decoders import *
 
 
@@ -49,6 +49,7 @@ def create_train_model(symbol_set, yml_parameters):
 		x = layers.Conv2D(
 			filters = architecture['filters'][conv_index],
 			kernel_size = architecture['kernel_size'][conv_index],
+			# strides = architecture['pool_strides'][conv_index],
 			padding = 'same',
 			name = 'Conv' + str(conv_index + 1) 
 		)(x)
@@ -60,6 +61,7 @@ def create_train_model(symbol_set, yml_parameters):
 				'name = ' + "'Activ" + str(conv_index + 1)  + "'" + \
 				', alpha=' + str(architecture['param_activation'][conv_index]) + \
 				')' + '(x)')
+		# x = eval('activations.' + architecture['activations'][conv_index] + '(x)')
 		x = layers.MaxPool2D(
 				pool_size = architecture['pool_size'][conv_index],
 				strides = architecture['pool_strides'][conv_index],
@@ -89,6 +91,10 @@ def create_train_model(symbol_set, yml_parameters):
 				),
 				name='Bidirectional' + str(rec_index + 1) 
 		)(x)
+		# if architecture['batch_norm_rec'][rec_index]:
+    	# 		x = layers.BatchNormalization(
+		# 		name = 'BatchNormRec' + str(rec_index + 1) 
+		# 	)(x)
 
 	#FINAL DENSE NN CLASSIFIER:
 	y_pred = layers.Dense(
@@ -174,23 +180,39 @@ def error_functions(result_CTC_Decoding, y_true, y_true_symbol_length, inverse_s
 	# Obtaining results:
 	SeqER = 0
 	SymER = 0
+	SeqER_kern = 0
+	SymER_kern = 0
 	for it_seq in range(len(y_true)):
 		# Decoding:	
 		CTC_prediction = [inverse_symbol_dict[str(u)] for u in np.array(result_CTC_Decoding[it_seq]) if u != -1]
 		true_labels = [inverse_symbol_dict[str(u)] for u in y_true[it_seq][:y_true_symbol_length[it_seq]]]
 
+		CTC_prediction_kern = Code2Kern.decode_prediction(CTC_prediction)
+		true_labels_kern = Code2Kern.decode_prediction(true_labels)
+
 		# Sequence error rate:
 		if CTC_prediction != true_labels:
 			SeqER = SeqER + 1
 
+		# Sequence error rate in Kern:
+		if CTC_prediction_kern != true_labels_kern:
+			SeqER_kern = SeqER_kern + 1
+
 		# Symbol error rate:
 		SymER = SymER + editdistance.distance(true_labels,CTC_prediction)/float(len(true_labels))
 
-	# SeqER:
+		# Symbol error rate in Kern:
+		SymER_kern = SymER_kern + editdistance.distance(true_labels_kern,CTC_prediction_kern)/float(len(true_labels_kern))
+
+	# Normlization:
 	SeqER = 100*SeqER/len(y_true)
 	SymER = 100*SymER/len(y_true)
 
-	return SeqER, SymER
+	# Normalization in kern:
+	SeqER_kern = 100*SeqER_kern/len(y_true)
+	SymER_kern = 100*SymER_kern/len(y_true)
+
+	return SeqER, SymER, SeqER_kern, SymER_kern
 
 
 """Error functions (E. Vidal)"""
@@ -219,7 +241,7 @@ def error_functions_vidal(result_CTC_Decoding, y_true, y_true_symbol_length, inv
 	SeqER = 100*SeqER/float(len(y_true))
 	SymER = 100*SymED/float(SymTrueLength)
 
-	return SeqEr_dict, SymEr_dict
+	return SeqER, SymER
 
 
 """Error functions (manual checking)"""
