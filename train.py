@@ -101,7 +101,7 @@ def evaluate_set(files, prediction_model, yml_parameters, symbol_dict, inverse_s
 		result_CTC_Decoding = CTC_model.ctc_manual_decoding(y_prediction, input_length_train, yml_parameters)
 
 		#Figures of merit:
-		SeqER_error, SymER_error, SeqER_kern_error, SymER_kern_error = CTC_model.error_functions_batch(result_CTC_Decoding, Y, Y_len, inverse_symbol_dict)
+		SeqER_error, SymER_error, SeqER_kern_error, SymER_kern_error = CTC_model.error_functions_batch(result_CTC_Decoding, Y, Y_len, inverse_symbol_dict, files[init_index:end_index])
 
 		SeqER_error_list.extend(SeqER_error)
 		SymER_error_list.extend(SymER_error)

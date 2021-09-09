@@ -7,6 +7,7 @@ import Code2Kern
 
 
 
+
 """Function for explicitly testing the trained model"""
 def test_model(model_path, image_path, yml_parameters):
 	#Loading the .h5 model:
@@ -67,9 +68,10 @@ def test_model_with_entire_set(model_path, partition, yml_parameters):
 	train_files, val_files, test_files = Data_processes.list_files(yml_parameters)
 	files = val_files if partition == 'validation' else test_files
 
-	result_CTC_Decoding_global = list()
-	Y_global = list()
-	Y_length_global = list()
+	SeqER_error_list = list()
+	SymER_error_list = list()
+	SeqER_kern_error_list = list()
+	SymER_kern_error_list  = list()
 
 	init_index = 0
 	while init_index < len(files):
@@ -84,26 +86,35 @@ def test_model_with_entire_set(model_path, partition, yml_parameters):
 		input_length_train = np.zeros([X.shape[0],], dtype='int64')
 		for i in range (X.shape[0]):
 			input_length_train[i] = X_len[i]//yml_parameters['architecture']['width_reduction']
- 
+
 		# Predictions (current group):
 		y_prediction = prediction_model.predict(
 			x = X
 		)
 
-		#Storing length of the expected sequences:
-		Y_length_global.extend(Y_len)
-
 		#Decoding test predictions (current group):
 		result_CTC_Decoding = CTC_model.ctc_manual_decoding(y_prediction, input_length_train, yml_parameters)
 
-		#Extending list for evaluating the results:
-		result_CTC_Decoding_global.extend(result_CTC_Decoding)
-		Y_global.extend(Y)
+		#Figures of merit:
+		SeqER_error, SymER_error, SeqER_kern_error, SymER_kern_error = CTC_model.error_functions_batch(result_CTC_Decoding, Y, Y_len, inverse_symbol_dict, files[init_index:end_index])
+
+		SeqER_error_list.extend(SeqER_error)
+		SymER_error_list.extend(SymER_error)
+		SeqER_kern_error_list.extend(SeqER_kern_error)
+		SymER_kern_error_list.extend(SymER_kern_error)
+
 
 		#Updating index:
 		init_index = end_index
 
 	#Figures of merit:
-	SeqER_error, SymER_error, SeqER_kern_error, SymER_kern_error = CTC_model.error_functions(result_CTC_Decoding_global, Y_global, Y_length_global, inverse_symbol_dict, files)
+	SeqER_error = 100*sum(SeqER_error_list)/len(files)
+	SymER_error = 100*sum(SymER_error_list)/len(files)
+	SeqER_kern_error = 100*sum(SeqER_kern_error_list)/len(files)
+	SymER_kern_error = 100*sum(SymER_kern_error_list)/len(files)
+
+	out = 	"Results\n"
+	out += "NN\t\t=> SymER: {:.2f} % - SeqER: {:.2f} % ".format(SymER_error, SeqER_error)
+	out += "Kern\t\t=> SymER: {:.2f} % - SeqER: {:.2f} % ".format(SymER_kern_error, SeqER_kern_error)
 
 	return
