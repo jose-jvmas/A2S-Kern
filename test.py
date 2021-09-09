@@ -115,6 +115,8 @@ def test_model_with_entire_set(model_path, partition, yml_parameters):
 
 	out = 	"Results\n"
 	out += "NN\t\t=> SymER: {:.2f} % - SeqER: {:.2f} % ".format(SymER_error, SeqER_error)
-	out += "Kern\t\t=> SymER: {:.2f} % - SeqER: {:.2f} % ".format(SymER_kern_error, SeqER_kern_error)
+	out += "\nKern\t\t=> SymER: {:.2f} % - SeqER: {:.2f} % ".format(SymER_kern_error, SeqER_kern_error)
+
+	print(out)
 
 	return
