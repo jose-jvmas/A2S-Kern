@@ -39,14 +39,14 @@ def train_model(yml_parameters, model, prediction_model, symbol_dict, inverse_sy
 		current_iteration_results.error_dict['Validation']['SeqER'], current_iteration_results.error_dict['Validation']['SymER'],\
 			current_iteration_results.error_dict['Validation']['SeqER_kern'], current_iteration_results.error_dict['Validation']['SymER_kern'] = evaluate_set(files = val_files,\
 			yml_parameters = yml_parameters, prediction_model = prediction_model, symbol_dict = symbol_dict,\
-			inverse_symbol_dict = inverse_symbol_dict, partition = 'val')
+			inverse_symbol_dict = inverse_symbol_dict)
 		# \VALIDATION/ #
 	
 		# /TEST\ #
 		current_iteration_results.error_dict['Test']['SeqER'], current_iteration_results.error_dict['Test']['SymER'],\
 			current_iteration_results.error_dict['Test']['SeqER_kern'], current_iteration_results.error_dict['Test']['SymER_kern'] = evaluate_set(files = test_files,\
 			yml_parameters = yml_parameters, prediction_model = prediction_model, symbol_dict = symbol_dict,\
-			inverse_symbol_dict = inverse_symbol_dict, partition = 'test')
+			inverse_symbol_dict = inverse_symbol_dict)
 		# \TEST/ #
 
 		#Saving best obtained models & weights:
@@ -72,7 +72,7 @@ def train_model(yml_parameters, model, prediction_model, symbol_dict, inverse_sy
 
 
 """Function for testing the trained model on a set of data"""
-def evaluate_set(files, prediction_model, yml_parameters, symbol_dict, inverse_symbol_dict, partition):
+def evaluate_set(files, prediction_model, yml_parameters, symbol_dict, inverse_symbol_dict):
 	result_CTC_Decoding_global = list()
 	Y_global = list()
 	Y_length_global = list()

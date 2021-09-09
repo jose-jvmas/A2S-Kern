@@ -22,7 +22,7 @@ import sys
 import Data_processes
 import CTC_model
 
-INPUT_MODES = ['train', 'test', 'confMat']
+INPUT_MODES = ['train', 'test', 'eval_set', 'confMat']
 
 
 """Arguments menu"""
@@ -31,7 +31,7 @@ def menu():
 
 	parser.add_argument('-mode',		dest="mode",		required=True,			help='Train/test CRNN-CTC', choices = INPUT_MODES)
 	parser.add_argument('-model',		dest="model_path",	required=False,			help='Path of the .h5 model to load')
-	parser.add_argument('-input',		dest="im_path",		required=False,			help='Path of the image to test')
+	parser.add_argument('-input',		dest="input_path",	required=False,			help='Path of the element (sound/entire set) to test')
 	parser.add_argument('-conf',		dest="conf",		required=True,			help='YAML configuration file')
 	parser.add_argument('-fold',		dest="fold",		required=True,			help='Fold to process', type=str)
 
@@ -99,8 +99,11 @@ if __name__ == "__main__":
 		train.train_model(yml_parameters, model, prediction_model, symbol_dict, inverse_symbol_dict)
 
 	elif config.mode == 'test':
-		test.test_model(config.model_path, config.im_path, yml_parameters)
+		test.test_model(config.model_path, config.input_path, yml_parameters)
 	
+	elif config.mode == 'eval_set':
+		test.test_model_with_entire_set(config.model_path, config.input_path, yml_parameters)
+
 	elif config.mode == 'confMat':
 		symbol_dict, inverse_symbol_dict = Data_processes.retrieve_symbols(yml_parameters)
 		Data_processes.obtain_confidence_matrices(config.model_path, symbol_dict, yml_parameters)

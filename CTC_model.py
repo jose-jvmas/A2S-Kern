@@ -57,11 +57,11 @@ def create_train_model(symbol_set, yml_parameters):
 			x = layers.BatchNormalization(
 				name = 'BatchNorm' + str(conv_index + 1) 
 			)(x)
-		x = eval('layers.' + architecture['activations'][conv_index] + '(' + \
-				'name = ' + "'Activ" + str(conv_index + 1)  + "'" + \
-				', alpha=' + str(architecture['param_activation'][conv_index]) + \
-				')' + '(x)')
-		# x = eval('activations.' + architecture['activations'][conv_index] + '(x)')
+		# x = eval('layers.' + architecture['activations'][conv_index] + '(' + \
+		# 		'name = ' + "'Activ" + str(conv_index + 1)  + "'" + \
+		# 		', alpha=' + str(architecture['param_activation'][conv_index]) + \
+		# 		')' + '(x)')
+		x = eval('activations.' + architecture['activations'][conv_index] + '(x)')
 		x = layers.MaxPool2D(
 				pool_size = architecture['pool_size'][conv_index],
 				strides = architecture['pool_strides'][conv_index],
@@ -91,10 +91,10 @@ def create_train_model(symbol_set, yml_parameters):
 				),
 				name='Bidirectional' + str(rec_index + 1) 
 		)(x)
-		# if architecture['batch_norm_rec'][rec_index]:
-    	# 		x = layers.BatchNormalization(
-		# 		name = 'BatchNormRec' + str(rec_index + 1) 
-		# 	)(x)
+		if architecture['batch_norm_rec'][rec_index]:
+			x = layers.BatchNormalization(
+				name = 'BatchNormRec' + str(rec_index + 1) 
+			)(x)
 
 	#FINAL DENSE NN CLASSIFIER:
 	y_pred = layers.Dense(
@@ -176,16 +176,23 @@ def ctc_manual_decoding(input_tensor, original_batch_images_size, yml_parameters
 
 
 """Error functions"""
-def error_functions(result_CTC_Decoding, y_true, y_true_symbol_length, inverse_symbol_dict):
+def error_functions(result_CTC_Decoding, y_true, y_true_symbol_length, inverse_symbol_dict, files = []):
 	# Obtaining results:
 	SeqER = 0
 	SymER = 0
 	SeqER_kern = 0
 	SymER_kern = 0
 	for it_seq in range(len(y_true)):
+		print("**** Assessing file {}".format(files[it_seq]))
 		# Decoding:	
 		CTC_prediction = [inverse_symbol_dict[str(u)] for u in np.array(result_CTC_Decoding[it_seq]) if u != -1]
 		true_labels = [inverse_symbol_dict[str(u)] for u in y_true[it_seq][:y_true_symbol_length[it_seq]]]
+
+		print("CTC prediction Before Code2Kern:\n -->{}".format(CTC_prediction))
+		print("CTC prediction After Code2Kern:\n -->{}".format(Code2Kern.decode_prediction(CTC_prediction)))
+
+		print("GT Before Code2Kern:\n -->{}".format(true_labels))
+		print("GT After Code2Kern:\n -->{}".format(Code2Kern.decode_prediction(true_labels)))
 
 		CTC_prediction_kern = Code2Kern.decode_prediction(CTC_prediction)
 		true_labels_kern = Code2Kern.decode_prediction(true_labels)
