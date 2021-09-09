@@ -183,7 +183,8 @@ def error_functions(result_CTC_Decoding, y_true, y_true_symbol_length, inverse_s
 	SeqER_kern = 0
 	SymER_kern = 0
 	for it_seq in range(len(y_true)):
-		print("**** Assessing file {}".format(files[it_seq]))
+		if len(files) > 0:
+			print("**** Assessing file {}".format(files[it_seq]))
 		# Decoding:	
 		CTC_prediction = [inverse_symbol_dict[str(u)] for u in np.array(result_CTC_Decoding[it_seq]) if u != -1]
 		true_labels = [inverse_symbol_dict[str(u)] for u in y_true[it_seq][:y_true_symbol_length[it_seq]]]
@@ -222,33 +223,49 @@ def error_functions(result_CTC_Decoding, y_true, y_true_symbol_length, inverse_s
 	return SeqER, SymER, SeqER_kern, SymER_kern
 
 
-"""Error functions (E. Vidal)"""
-def error_functions_vidal(result_CTC_Decoding, y_true, y_true_symbol_length, inverse_symbol_dict):
-	# Obtaining results:
-	SeqER = 0
-	SymER = 0
-	SymED = 0
-	SymTrueLength = 0
-
+def error_functions_batch(result_CTC_Decoding, y_true, y_true_symbol_length, inverse_symbol_dict, files = []):
+    	# Obtaining results:
+	SeqER = list()
+	SymER = list()
+	SeqER_kern = list()
+	SymER_kern = list()
 	for it_seq in range(len(y_true)):
+		if len(files) > 0:
+			print("**** Assessing file {}".format(files[it_seq]))
 		# Decoding:	
 		CTC_prediction = [inverse_symbol_dict[str(u)] for u in np.array(result_CTC_Decoding[it_seq]) if u != -1]
 		true_labels = [inverse_symbol_dict[str(u)] for u in y_true[it_seq][:y_true_symbol_length[it_seq]]]
 
+		print("CTC prediction Before Code2Kern:\n -->{}".format(CTC_prediction))
+		print("CTC prediction After Code2Kern:\n -->{}".format(Code2Kern.decode_prediction(CTC_prediction)))
+
+		print("GT Before Code2Kern:\n -->{}".format(true_labels))
+		print("GT After Code2Kern:\n -->{}".format(Code2Kern.decode_prediction(true_labels)))
+
+		CTC_prediction_kern = Code2Kern.decode_prediction(CTC_prediction)
+		true_labels_kern = Code2Kern.decode_prediction(true_labels)
+
 		# Sequence error rate:
 		if CTC_prediction != true_labels:
-			SeqER = SeqER + 1
+			SeqER.append(1)
+		else:
+			SeqER.append(0)
+
+		# Sequence error rate in Kern:
+		if CTC_prediction_kern != true_labels_kern:
+			SeqER_kern.append(1)
+		else:
+			SeqER_kern.append(0)
 
 		# Symbol error rate:
-		SymED += editdistance.distance(true_labels,CTC_prediction)
-		SymTrueLength += len(true_labels)
+		SymER.append(editdistance.distance(true_labels,CTC_prediction)/float(len(true_labels)))
+
+		# Symbol error rate in Kern:
+		SymER_kern.append(editdistance.distance(true_labels_kern,CTC_prediction_kern)/float(len(true_labels_kern)))
+
+	return SeqER, SymER, SeqER_kern, SymER_kern
 
 
-	# Averaging by the batch size:
-	SeqER = 100*SeqER/float(len(y_true))
-	SymER = 100*SymED/float(SymTrueLength)
-
-	return SeqER, SymER
 
 
 """Error functions (manual checking)"""

@@ -73,9 +73,10 @@ def train_model(yml_parameters, model, prediction_model, symbol_dict, inverse_sy
 
 """Function for testing the trained model on a set of data"""
 def evaluate_set(files, prediction_model, yml_parameters, symbol_dict, inverse_symbol_dict):
-	result_CTC_Decoding_global = list()
-	Y_global = list()
-	Y_length_global = list()
+	SeqER_error_list = list()
+	SymER_error_list = list()
+	SeqER_kern_error_list = list()
+	SymER_kern_error_list  = list()
 
 	init_index = 0
 	while init_index < len(files):
@@ -96,20 +97,70 @@ def evaluate_set(files, prediction_model, yml_parameters, symbol_dict, inverse_s
 			x = X
 		)
 
-		#Storing length of the expected sequences:
-		Y_length_global.extend(Y_len)
-
 		#Decoding test predictions (current group):
 		result_CTC_Decoding = CTC_model.ctc_manual_decoding(y_prediction, input_length_train, yml_parameters)
 
-		#Extending list for evaluating the results:
-		result_CTC_Decoding_global.extend(result_CTC_Decoding)
-		Y_global.extend(Y)
+		#Figures of merit:
+		SeqER_error, SymER_error, SeqER_kern_error, SymER_kern_error = CTC_model.error_functions_batch(result_CTC_Decoding, Y, Y_len, inverse_symbol_dict)
+
+		SeqER_error_list.extend(SeqER_error)
+		SymER_error_list.extend(SymER_error)
+		SeqER_kern_error_list.extend(SeqER_kern_error)
+		SymER_kern_error_list.extend(SymER_kern_error)
+
 
 		#Updating index:
 		init_index = end_index
 
 	#Figures of merit:
-	SeqER_error, SymER_error, SeqER_kern_error, SymER_kern_error = CTC_model.error_functions(result_CTC_Decoding_global, Y_global, Y_length_global, inverse_symbol_dict)
+	SeqER_error = 100*sum(SeqER_error_list)/len(files)
+	SymER_error = 100*sum(SymER_error_list)/len(files)
+	SeqER_kern_error = 100*sum(SeqER_kern_error_list)/len(files)
+	SymER_kern_error = 100*sum(SymER_kern_error_list)/len(files)
 
 	return SeqER_error, SymER_error, SeqER_kern_error, SymER_kern_error
+
+
+
+# """Function for testing the trained model on a set of data"""
+# def evaluate_set_OLD(files, prediction_model, yml_parameters, symbol_dict, inverse_symbol_dict):
+# 	result_CTC_Decoding_global = list()
+# 	Y_global = list()
+# 	Y_length_global = list()
+
+# 	init_index = 0
+# 	while init_index < len(files):
+		
+# 		end_index = min(init_index + yml_parameters['batch_size'], len(files))
+
+# 		#Loading data:
+# 		X, Y, X_len, Y_len = Data_processes.load_selected_range(init_index = init_index, end_index = end_index,\
+# 										files = files, symbol_dict = symbol_dict, yml_parameters = yml_parameters)
+
+# 		#Additional vectors for training:
+# 		input_length_train = np.zeros([X.shape[0],], dtype='int64')
+# 		for i in range (X.shape[0]):
+# 			input_length_train[i] = X_len[i]//yml_parameters['architecture']['width_reduction']
+
+# 		# Predictions (current group):
+# 		y_prediction = prediction_model.predict(
+# 			x = X
+# 		)
+
+# 		#Storing length of the expected sequences:
+# 		Y_length_global.extend(Y_len)
+
+# 		#Decoding test predictions (current group):
+# 		result_CTC_Decoding = CTC_model.ctc_manual_decoding(y_prediction, input_length_train, yml_parameters)
+
+# 		#Extending list for evaluating the results:
+# 		result_CTC_Decoding_global.extend(result_CTC_Decoding)
+# 		Y_global.extend(Y)
+
+# 		#Updating index:
+# 		init_index = end_index
+
+# 	#Figures of merit:
+# 	SeqER_error, SymER_error, SeqER_kern_error, SymER_kern_error = CTC_model.error_functions(result_CTC_Decoding_global, Y_global, Y_length_global, inverse_symbol_dict)
+
+# 	return SeqER_error, SymER_error, SeqER_kern_error, SymER_kern_error
