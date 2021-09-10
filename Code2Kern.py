@@ -30,6 +30,10 @@ def decode_prediction(input_seq):
 			it += 1
 
 		elif 'P' in input_seq[it]: #NOTEs:
+			pitch = ''
+			pitch_alteration = ''
+			octave = ''
+			duration_alteration = ''
 			if len(input_seq[it]) == 2 and input_seq[it][0] == 'P' and input_seq[it][1] != 'A':
 				# Note case:
 				out_note = list()
@@ -67,7 +71,7 @@ def decode_prediction(input_seq):
 					it += 1
 			
 			#Creating the actual note with the elements extracted:
-			if pitch != 'r' and ('PA' not in input_seq[it] and 'D' not in input_seq[it] and 'O' not in input_seq[it]):
+			if pitch != 'r' and pitch != '':# and ('PA' not in input_seq[it] and 'D' not in input_seq[it] and 'O' not in input_seq[it]):
 				if duration != '' and octave != '': #Non-silence
 					note = pitchOctave2Kern(pitch, 'O'+octave)
 					duration = duration + duration_alteration if len(duration_alteration) > 0 else duration

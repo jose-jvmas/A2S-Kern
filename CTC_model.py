@@ -242,8 +242,8 @@ def error_functions_batch(result_CTC_Decoding, y_true, y_true_symbol_length, inv
 		# print("GT Before Code2Kern:\n -->{}".format(true_labels))
 		# print("GT After Code2Kern:\n -->{}".format(Code2Kern.decode_prediction(true_labels)))
 
-		# CTC_prediction_kern = Code2Kern.decode_prediction(CTC_prediction)
-		# true_labels_kern = Code2Kern.decode_prediction(true_labels)
+		CTC_prediction_kern = Code2Kern.decode_prediction(CTC_prediction)
+		true_labels_kern = Code2Kern.decode_prediction(true_labels)
 
 		# Sequence error rate:
 		if CTC_prediction != true_labels:
@@ -251,17 +251,17 @@ def error_functions_batch(result_CTC_Decoding, y_true, y_true_symbol_length, inv
 		else:
 			SeqER.append(0)
 
-		# # Sequence error rate in Kern:
-		# if CTC_prediction_kern != true_labels_kern:
-		# 	SeqER_kern.append(1)
-		# else:
-		# 	SeqER_kern.append(0)
+		# Sequence error rate in Kern:
+		if CTC_prediction_kern != true_labels_kern:
+			SeqER_kern.append(1)
+		else:
+			SeqER_kern.append(0)
 
 		# Symbol error rate:
 		SymER.append(editdistance.distance(true_labels,CTC_prediction)/float(len(true_labels)))
 
 		# Symbol error rate in Kern:
-		# SymER_kern.append(editdistance.distance(true_labels_kern,CTC_prediction_kern)/float(len(true_labels_kern)))
+		SymER_kern.append(editdistance.distance(true_labels_kern,CTC_prediction_kern)/float(len(true_labels_kern)))
 
 	return SeqER, SymER, SeqER_kern, SymER_kern
 
