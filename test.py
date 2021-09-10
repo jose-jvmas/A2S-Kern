@@ -120,3 +120,58 @@ def test_model_with_entire_set(model_path, partition, yml_parameters):
 	print(out)
 
 	return
+
+
+
+def predict_export_entire_partition(model_path, partition, yml_parameters):
+
+	#Loading the .h5 model:
+	prediction_model = CTC_model.load_disk_model(model_path)
+
+	#Obtaining additional parameters required:
+	symbol_dict, inverse_symbol_dict = Data_processes.retrieve_symbols(yml_parameters)
+
+	#Listing files:
+	train_files, val_files, test_files = Data_processes.list_files(yml_parameters)
+	files = val_files if partition == 'validation' else test_files
+
+
+	gt_out = open(os.path.join(yml_parameters['path_to_corpus'], 'GT-' + partition + '.txt'), 'w')
+	pred_out = open(os.path.join(yml_parameters['path_to_corpus'], 'Pred-' + partition + '.txt'), 'w')
+
+	for it_file in range(len(files)):
+		print("{} out of {}".format(it_file+1, len(files)))
+		
+		#Loading data:
+		X, Y, X_len, Y_len = Data_processes.load_selected_range(init_index = it_file, end_index = it_file + 1,\
+										files = files, symbol_dict = symbol_dict, yml_parameters = yml_parameters)
+
+		#Additional vectors for training:
+		input_length_train = np.zeros([X.shape[0],], dtype='int64')
+		for i in range (X.shape[0]):
+			input_length_train[i] = X_len[i]//yml_parameters['architecture']['width_reduction']
+
+		# Predictions (current group):
+		y_prediction = prediction_model.predict(
+			x = X
+		)
+
+
+
+		#Decoding test predictions (current group):
+		result_CTC_Decoding = CTC_model.ctc_manual_decoding(y_prediction, input_length_train, yml_parameters)
+
+		CTC_prediction = [inverse_symbol_dict[str(u)] for u in np.array(result_CTC_Decoding[0]) if u != -1]
+		true_labels = [inverse_symbol_dict[str(u)] for u in Y[0][:Y_len[0]]]
+
+		CTC_prediction_kern = Code2Kern.decode_prediction(true_labels)
+		true_labels_kern = Code2Kern.decode_prediction(CTC_prediction)
+
+
+		gt_out.write(",".join(CTC_prediction_kern) + '\n')
+		pred_out.write(",".join(true_labels_kern) + '\n')
+
+	gt_out.close()
+	pred_out.close()
+
+	return

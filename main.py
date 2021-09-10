@@ -22,7 +22,7 @@ import sys
 import Data_processes
 import CTC_model
 
-INPUT_MODES = ['train', 'test', 'eval_set', 'confMat']
+INPUT_MODES = ['train', 'test', 'eval_set', 'export_set', 'confMat']
 
 
 """Arguments menu"""
@@ -103,6 +103,9 @@ if __name__ == "__main__":
 	
 	elif config.mode == 'eval_set':
 		test.test_model_with_entire_set(config.model_path, config.input_path, yml_parameters)
+	
+	elif config.mode == 'export_set':
+		test.predict_export_entire_partition(config.model_path, config.input_path, yml_parameters)
 
 	elif config.mode == 'confMat':
 		symbol_dict, inverse_symbol_dict = Data_processes.retrieve_symbols(yml_parameters)
