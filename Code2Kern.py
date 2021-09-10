@@ -67,7 +67,7 @@ def decode_prediction(input_seq):
 					it += 1
 			
 			#Creating the actual note with the elements extracted:
-			if pitch != 'r':
+			if pitch != 'r' and ('PA' not in input_seq[it] and 'D' not in input_seq[it] and 'O' not in input_seq[it]):
 				if duration != '' and octave != '': #Non-silence
 					note = pitchOctave2Kern(pitch, 'O'+octave)
 					duration = duration + duration_alteration if len(duration_alteration) > 0 else duration
@@ -79,10 +79,12 @@ def decode_prediction(input_seq):
 
 					out_seq.append(note)
 
-			else: #Silence
+			elif 'r' in pitch: #Silence
 				if duration != '':
 					silence = duration + pitch
 					out_seq.append(silence)
+			else:
+				it += 1
 		else:
 			it += 1
 			
@@ -123,7 +125,10 @@ if __name__ == '__main__':
 	GT = ['*clefC1','*M6/8','Pr','D4','=','Pr','D4','=','Pr','D4','=','Pr','D4','=','Pr','D4','=','Pr','D4','=','Pr','D4','=','Pr','D4','=','Pr','D4','=','Pr','D4','=','Pr','D4','=','Pr','D4','=','Pr','D4','=','Pr','D4','=','Pr','D4','Pr','D8','Pr','D4','Pg','O4','D8','=','Pc','O5','D4','Pr','D8','Pr','D4','Pr','D8','=','Pr','D4','Pc','O5','D8','Pe','O5','D4','Pc','O5','D8','=','Pa','O4','D4','Pa','O4','D8','Pr','D4','Pr','D8','=']
 
 	GT = ['*clefC1','*k[b-e-a-]','*M3/4','Pr','D2','=','Pb','PA-','O4','D4','Pe','PA-','O4','D8','Pe','PA-','O5','D8','Pe','PA-','O5','D8','Pc','O5','D8','=','Pa','PA-','O4','D8','Pa','PA-','O4','D8','Pr','D4','Pr','D4','=','Pf','O5','D4','Pe','PA-','O5','D8','DA.','Pc','O5','D16','Pb','PA-','O4','D8','DA.','Pa','PA-','O4','D16','=','Pa','PA-','O4','D8','Pg','O4','D8','Pr','D4','=']
-	decode_prediction(GT)
+
+	Prediction = ['*clefG2', '*k[f#c#g#]', 'Pa', 'O4', 'D32', 'Pa', 'O4', 'D8', 'Pa', 'O4', 'D4', 'Pb', 'O4', 'D16', 'Pc', 'PA#', 'O5', 'D16', 'Pd', 'O5', 'D8', 'Pd', 'O5', 'D4', 'Pc', 'PA#', 'O5', 'D16', 'Pd', 'O5', 'D16', 'Pb', 'O4', 'D8', 'Pa', 'O4', 'D8', 'Pr', 'D32', 'Pe', 'O5', 'D32', '=', 'Pa', 'O5', 'D8', 'DA.', 'Pb', 'O5', 'D32', 'Pa', 'O5', 'D32', 'O5', 'D32', 'O5', 'D32', 'Pb', 'O5', 'D32', 'Pc', 'PA#', 'O6', 'D32', 'PA#', 'O6', 'D32', 'Pd', 'O6', 'D32', 'Pc', 'O6', 'D32', 'Pb', 'O5', 'Pa', 'O5', 'D8', 'Pr', 'D8', '=']
+
+	decode_prediction(Prediction)
 	# print(pitchOctave2Kern('g','O5'))
 	
 	# Pitch - p. alteration - Octave - Duration
