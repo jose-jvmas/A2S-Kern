@@ -43,14 +43,15 @@ def test_model(model_path, image_path, yml_parameters):
 
 	print("- Symbol error: " + str(SymER) + "\n- Sequence error: " + str(SeqER))
 
-	print("Pred:\t{}".format(",".join(Code2Kern.decode_prediction(CTC_prediction))))
-	print("GT:\t{}".format(",".join(Code2Kern.decode_prediction(GT_label))))
+	if yml_parameters['GT_type'] == 'krn':
+		print("Pred:\t{}".format(",".join(Code2Kern.decode_prediction(CTC_prediction))))
+		print("GT:\t{}".format(",".join(Code2Kern.decode_prediction(GT_label))))
 
-	#Obtaining metrics:
-	SeqER, SymER = CTC_model.error_functions_manual_checking(CTC_prediction = Code2Kern.decode_prediction(CTC_prediction),\
-		true_labels = Code2Kern.decode_prediction(GT_label))
+		#Obtaining metrics:
+		SeqER, SymER = CTC_model.error_functions_manual_checking(CTC_prediction = Code2Kern.decode_prediction(CTC_prediction),\
+			true_labels = Code2Kern.decode_prediction(GT_label))
 
-	print("- Symbol error: " + str(SymER) + "\n- Sequence error: " + str(SeqER))
+		print("- Symbol error: " + str(SymER) + "\n- Sequence error: " + str(SeqER))
 
 	return
 
@@ -96,8 +97,13 @@ def test_model_with_entire_set(model_path, partition, yml_parameters):
 		result_CTC_Decoding = CTC_model.ctc_manual_decoding(y_prediction, input_length_train, yml_parameters)
 
 		#Figures of merit:
-		SeqER_error, SymER_error, SeqER_kern_error, SymER_kern_error = CTC_model.error_functions_batch(result_CTC_Decoding, Y, Y_len, inverse_symbol_dict, files[init_index:end_index])
-
+		if yml_parameters['GT_type'] == 'krn':
+			SeqER_error, SymER_error, SeqER_kern_error, SymER_kern_error = CTC_model.error_functions_batch_with_Kern_Reconstruction(result_CTC_Decoding, Y, Y_len, inverse_symbol_dict, files[init_index:end_index])
+		else:
+			SeqER_error, SymER_error, = CTC_model.error_functions_batch(result_CTC_Decoding, Y, Y_len, inverse_symbol_dict, files[init_index:end_index])
+			SeqER_kern_error = [0]*len(SeqER_error)
+			SymER_kern_error = [0]*len(SeqER_error)
+		
 		SeqER_error_list.extend(SeqER_error)
 		SymER_error_list.extend(SymER_error)
 		SeqER_kern_error_list.extend(SeqER_kern_error)
@@ -156,20 +162,19 @@ def predict_export_entire_partition(model_path, partition, yml_parameters):
 			x = X
 		)
 
-
-
 		#Decoding test predictions (current group):
 		result_CTC_Decoding = CTC_model.ctc_manual_decoding(y_prediction, input_length_train, yml_parameters)
 
-		CTC_prediction = [inverse_symbol_dict[str(u)] for u in np.array(result_CTC_Decoding[0]) if u != -1]
-		true_labels = [inverse_symbol_dict[str(u)] for u in Y[0][:Y_len[0]]]
+		CTC_prediction_kern = [inverse_symbol_dict[str(u)] for u in np.array(result_CTC_Decoding[0]) if u != -1]
+		true_labels_kern = [inverse_symbol_dict[str(u)] for u in Y[0][:Y_len[0]]]
 
-		CTC_prediction_kern = Code2Kern.decode_prediction(true_labels)
-		true_labels_kern = Code2Kern.decode_prediction(CTC_prediction)
+		if yml_parameters['GT_type'] == 'krn':
+			true_labels_kern = Code2Kern.decode_prediction(true_labels_kern)
+			CTC_prediction_kern = Code2Kern.decode_prediction(CTC_prediction_kern)
 
 
-		gt_out.write(",".join(CTC_prediction_kern) + '\n')
-		pred_out.write(",".join(true_labels_kern) + '\n')
+		pred_out.write(",".join(CTC_prediction_kern) + '\n')
+		gt_out.write(",".join(true_labels_kern) + '\n')
 
 	gt_out.close()
 	pred_out.close()

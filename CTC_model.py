@@ -227,6 +227,29 @@ def error_functions_batch(result_CTC_Decoding, y_true, y_true_symbol_length, inv
     	# Obtaining results:
 	SeqER = list()
 	SymER = list()
+
+	for it_seq in range(len(y_true)):
+		# Decoding:	
+		CTC_prediction = [inverse_symbol_dict[str(u)] for u in np.array(result_CTC_Decoding[it_seq]) if u != -1]
+		true_labels = [inverse_symbol_dict[str(u)] for u in y_true[it_seq][:y_true_symbol_length[it_seq]]]
+
+		# Sequence error rate:
+		if CTC_prediction != true_labels:
+			SeqER.append(1)
+		else:
+			SeqER.append(0)
+
+		# Symbol error rate:
+		SymER.append(editdistance.distance(true_labels,CTC_prediction)/float(len(true_labels)))
+
+	return SeqER, SymER
+
+
+
+def error_functions_batch_with_Kern_Reconstruction(result_CTC_Decoding, y_true, y_true_symbol_length, inverse_symbol_dict, files = []):
+    	# Obtaining results:
+	SeqER = list()
+	SymER = list()
 	SeqER_kern = list()
 	SymER_kern = list()
 	for it_seq in range(len(y_true)):
@@ -236,11 +259,6 @@ def error_functions_batch(result_CTC_Decoding, y_true, y_true_symbol_length, inv
 		CTC_prediction = [inverse_symbol_dict[str(u)] for u in np.array(result_CTC_Decoding[it_seq]) if u != -1]
 		true_labels = [inverse_symbol_dict[str(u)] for u in y_true[it_seq][:y_true_symbol_length[it_seq]]]
 
-		# print("CTC prediction Before Code2Kern:\n -->{}".format(CTC_prediction))
-		# print("CTC prediction After Code2Kern:\n -->{}".format(Code2Kern.decode_prediction(CTC_prediction)))
-
-		# print("GT Before Code2Kern:\n -->{}".format(true_labels))
-		# print("GT After Code2Kern:\n -->{}".format(Code2Kern.decode_prediction(true_labels)))
 
 		CTC_prediction_kern = Code2Kern.decode_prediction(CTC_prediction)
 		true_labels_kern = Code2Kern.decode_prediction(true_labels)
